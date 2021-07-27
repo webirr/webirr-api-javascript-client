@@ -1,0 +1,27 @@
+{
+  "name": "webirr",
+  "version": "0.1.0",
+  "description": "Official JavaScript Client Library for WeBirr APIs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/webirr/webirr-api-javascript-client.git"
+  },
+  "keywords": [
+    "webirr",
+    "fintech",
+    "ethiopia"
+  ],
+  "author": "WeBirr Technologies <tech@webirr.com> (https://webirr.com)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/webirr/webirr-api-javascript-client/issues"
+  },
+  "homepage": "https://github.com/webirr/webirr-api-javascript-client#readme",
+  "dependencies": {
+    "axios": "^0.21.1"
+  }
+}
