@@ -37,14 +37,14 @@ The library needs to be configured with a *merchant Id* & *API key*. You can get
 
 ```javascript
 
-const WeBirrClient = require('webirr');
+const webirr = require('webirr');
 
 async function main() 
 {
-  const apikey = 'YOUR_API_KEY';
+  const apiKey = 'YOUR_API_KEY';
   const merchantId = 'YOUR_MERCHANT_ID';
 
-  var api = new WeBirrClient(apiKey, true);
+  var api = new webirr.WeBirrClient(apiKey, true);
 
   let bill = {
     amount: '270.90',
@@ -98,14 +98,14 @@ main();
 
 ```javascript
 
-const WeBirrClient = require('webirr');
+const webirr = require('webirr');
 
 async function main() 
 {
-  const apikey = 'YOUR_API_KEY';
+  const apiKey = 'YOUR_API_KEY';
   const merchantId = 'YOUR_MERCHANT_ID';
 
-  var api = new WeBirrClient(apiKey, true);
+  var api = new webirr.WeBirrClient(apiKey, true);
 
   var paymentCode = 'PAYMENT_CODE_YOU_SAVED_AFTER_CREATING_A_NEW_BILL'  // suchas as '141 263 782';
   
@@ -133,19 +133,41 @@ async function main()
 main();
 
 ```  
+*Sample object returned from getPaymentStatus()*
+
+```javascript
+{
+  error: null,
+  res: {
+    status: 2,
+    data: {
+      id: 111112347,
+      paymentReference: '8G3303GHJN',      
+      confirmed: true,
+      confirmedTime: '2021-07-03 10:25:35',
+      bankID: 'cbe_birr',
+      time: '2021-07-03 10:25:33',
+      amount: '4.60',
+      wbcCode: '624 549 955'
+    }
+  },
+  errorCode: null
+}
+
+```
 
 ### Deleting an existing Bill from WeBirr Servers (if it is not paid)
 
 ```javascript
 
-const WeBirrClient = require('webirr');
+const webirr = require('webirr');
 
 async function main() 
 {
-  const apikey = 'YOUR_API_KEY';
+  const apiKey = 'YOUR_API_KEY';
   const merchantId = 'YOUR_MERCHANT_ID';
 
-  var api = new WeBirrClient(apiKey, true);
+  var api = new webirr.WeBirrClient(apiKey, true);
 
   var paymentCode = 'PAYMENT_CODE_YOU_SAVED_AFTER_CREATING_A_NEW_BILL'  // suchas as '141 263 782';
   
