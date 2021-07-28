@@ -114,7 +114,7 @@ async function main()
 
   if (!r.error) {
     // success
-    if (r.res.isPaid) {
+    if (r.res.status == 2) {
       console.log('bill is paid');
       console.log('bill payment detail');
       console.log(`Bank: ${r.res.data.bankID}`);
