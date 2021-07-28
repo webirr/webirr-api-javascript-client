@@ -17,3 +17,7 @@
 ## 1.0.1
 
 - more examples added
+
+## 1.0.2
+
+- more examples added
