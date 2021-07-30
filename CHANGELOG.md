@@ -8,7 +8,7 @@
 
 ## 0.2.1
 
-- examples added
+- Examples added
 
 ## 1.0.0
 
@@ -16,8 +16,12 @@
 
 ## 1.0.1
 
-- more examples added
+- Eore examples added
 
 ## 1.0.2
 
-- more examples added
+- More examples added
+
+## 1.0.3
+
+- Unit tests added
