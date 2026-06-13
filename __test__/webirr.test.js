@@ -95,6 +95,8 @@ test.each(endpoints)('%s includes merchant_id when configured', async (endpoint,
     const request = httpClient.requests[0];
     const url = new URL(request.url);
     expect(request.method).toBe(method);
+    expect(request.headers.Accept).toBe('application/json');
+    expect(request.headers['Content-Type']).toBe('application/json');
     expect(request.url).toContain(`/${path}?`);
     expect(url.searchParams.get('api_key')).toBe('api-key');
     expect(url.searchParams.get('merchant_id')).toBe('merchant-from-client');

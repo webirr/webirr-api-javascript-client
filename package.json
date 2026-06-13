@@ -1,6 +1,6 @@
 {
   "name": "webirr",
-  "version": "1.0.4",
+  "version": "1.1.0",
   "description": "Official JavaScript Client Library for WeBirr Payment Gateway APIs",
   "main": "webirr.js",
   "files": [

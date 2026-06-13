@@ -80,7 +80,10 @@ class WeBirrClient {
         const request = {
             method,
             url: this._buildUrl(path, params),
-            headers: {"Content-Type": "application/json"}
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            }
         };
 
         if (data !== undefined) {
