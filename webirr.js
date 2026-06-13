@@ -1,102 +1,218 @@
-const axios = require('axios').default;
+const axiosModule = require('axios');
+const axios = axiosModule.default || axiosModule;
 
 /** 
  * A WeBirrClient instance object can be used to
- * Create, Update or Delete a Bill at WeBirr Servers and also to
- * Get the Payment Status of a bill.
+ * Create, Update or Delete a Bill at WeBirr Servers, retrieve
+ * Bill/Payment information, and get basic merchant statistics.
  * It is a wrapper for the REST Web Service API.
  */ 
 class WeBirrClient {
     /**
      * Creates an instance of WeBirrClient object to interact with remote WebService API.
-     * @param {string} apiKey 
-     * @param {boolean} isTestEnv 
+     * Preferred: new WeBirrClient(merchantId, apiKey, isTestEnv, httpClient)
+     * Legacy: new WeBirrClient(apiKey, isTestEnv)
+     * @param {string} merchantIdOrApiKey
+     * @param {string|boolean} apiKeyOrIsTestEnv
+     * @param {boolean|object} isTestEnv
+     * @param {object|null} httpClient Optional configured axios client for connection reuse/custom handlers.
      */
-    constructor(apiKey, isTestEnv = true)
+    constructor(merchantIdOrApiKey, apiKeyOrIsTestEnv = true, isTestEnv = true, httpClient = null)
     {
-        this._apiKey = apiKey;
-        this._baseAddress = isTestEnv? 'https://api.webirr.com' : 'https://api.webirr.com:8080';
+        if (typeof apiKeyOrIsTestEnv === 'boolean' || apiKeyOrIsTestEnv === undefined) {
+            this._merchantId = '';
+            this._apiKey = merchantIdOrApiKey || '';
+            this._baseAddress = (apiKeyOrIsTestEnv === undefined || apiKeyOrIsTestEnv) ? 'https://api.webirr.net' : 'https://api.webirr.net:8080';
+            this._client = this._isHttpClient(isTestEnv) ? isTestEnv : (httpClient || axios.create());
+        } else {
+            this._merchantId = merchantIdOrApiKey || '';
+            this._apiKey = apiKeyOrIsTestEnv || '';
+            this._baseAddress = isTestEnv ? 'https://api.webirr.net' : 'https://api.webirr.net:8080';
+            this._client = httpClient || axios.create();
+        }
     }
 
-/** 
- * Create a new bill at WeBirr Servers.
- * @param {object} bill represents an invoice or bill for a customer. see sample for structure of the Bill
- * @returns {object} see sample for structure of the returned ApiResponse Object 
- * Check if(ApiResponse.error == null) to see if there are errors.
- * ApiResponse.res will have the value of the returned PaymentCode on success.
- */
-async createBill(bill) {
-      var resp = await axios({
-          method: 'post',
-          url: `${this._baseAddress}/einvoice/api/postbill?api_key=${this._apiKey}`,
-          headers: {"Content-Type": "application/json"},
-          data: JSON.stringify(bill) } );
+    _isHttpClient(value) {
+        return value && typeof value.request === 'function';
+    }
 
-          if (resp.status == 200) 
-            return resp.data;
-          else 
-            return { error: `http error ${resp.status} ${resp.statusText}` };
-  }   
-  
-/**  
- * Update an existing bill at WeBirr Servers, if the bill is not paid yet.
- * The billReference has to be the same as the original bill created.
- * @param {object} bill represents an invoice or bill for a customer. see sample for structure of the Bill
- * @returns {object} see sample for structure of the returned ApiResponse Object 
- * Check if(ApiResponse.error == null) to see if there are errors.
- * ApiResponse.res will have the value of "OK" on success.
- */
-async updateBill(bill) {
+    _query(params = {}) {
+        const query = new URLSearchParams();
+        query.append('api_key', this._apiKey);
 
-    var resp = await axios({
-        method: 'put',
-        url: `${this._baseAddress}/einvoice/api/postbill?api_key=${this._apiKey}`,
-        headers: {"Content-Type": "application/json"},
-        data: JSON.stringify(bill) } );
+        if (this._merchantId) {
+            query.append('merchant_id', this._merchantId);
+        }
 
-        if (resp.status == 200) 
-          return resp.data;
-        else 
-          return { error: `http error ${resp.status} ${resp.statusText}` }; 
+        Object.keys(params || {}).forEach((key) => {
+            const value = params[key] == null ? '' : params[key];
+            query.append(key, value.toString());
+        });
 
-  } 
+        return query.toString();
+    }
 
-  /** 
-   * Delete an existing bill at WeBirr Servers, if the bill is not paid yet.
-   * @param {string} paymentCode is the number that WeBirr Payment Gateway returns on createBill.
-   * @returns {object} see sample for structure of the returned ApiResponse Object 
-   * Check if(ApiResponse.error == null) to see if there are errors.
-   * ApiResponse.res will have the value of "OK" on success.
-   */
-async deleteBill(paymentCode) {
-      var resp = await axios({
-        method: 'put',
-        url: `${this._baseAddress}/einvoice/api/deletebill?api_key=${this._apiKey}&wbc_code=${paymentCode}`} );
+    _buildUrl(path, params = {}) {
+        return `${this._baseAddress}/${path}?${this._query(params)}`;
+    }
 
-        if (resp.status == 200) 
-          return resp.data;
-        else 
-          return { error: `http error ${resp.status} ${resp.statusText}` }; 
+    _prepareBill(bill) {
+        if (!bill) {
+            return bill;
+        }
 
-  }  
-  
-/**
- * Get Payment Status of a bill from WeBirr Servers
- * @param {string} paymentCode is the number that WeBirr Payment Gateway returns on createBill.
- * @returns {object} see sample for structure of the returned ApiResponse Object  
- * Check if(returnedResult.error == null) to see if there are errors.
- * returnedResult.res will have `Payment` object on success (will be null otherwise!)
- * returnedResult.res?.isPaid ?? false -> will return true if the bill is paid (payment completed)
- * returnedResult.res?.data ?? null -> will have `PaymentDetail` object
- */
-async getPaymentStatus(paymentCode) { 
-        var resp = await axios(
-            `${this._baseAddress}/einvoice/api/getPaymentStatus?api_key=${this._apiKey}&wbc_code=${paymentCode}`);
-        if (resp.status == 200) 
-          return resp.data;
-        else 
-          return { error: `http error ${resp.status} ${resp.statusText}` };
-      }
+        if (this._merchantId) {
+            bill.merchantID = this._merchantId;
+        }
+
+        if (bill.customerPhone === undefined || bill.customerPhone === null) {
+            bill.customerPhone = '';
+        }
+
+        if (bill.extras === undefined || bill.extras === null) {
+            bill.extras = {};
+        }
+
+        return bill;
+    }
+
+    async _send(method, path, params = {}, data = undefined) {
+        const request = {
+            method,
+            url: this._buildUrl(path, params),
+            headers: {"Content-Type": "application/json"}
+        };
+
+        if (data !== undefined) {
+            request.data = data;
+        }
+
+        try {
+            const resp = await this._client.request(request);
+
+            if (resp.status == 200) {
+                return resp.data;
+            }
+
+            return { error: `http error ${resp.status} ${resp.statusText || ''}`.trim() };
+        } catch (error) {
+            if (error.response) {
+                if (error.response.data && typeof error.response.data === 'object') {
+                    return error.response.data;
+                }
+
+                return { error: `http error ${error.response.status} ${error.response.statusText || ''}`.trim() };
+            }
+
+            return { error: error.message || String(error) };
+        }
+    }
+
+    /** 
+     * Create a new bill at WeBirr Servers.
+     * @param {object} bill represents an invoice or bill for a customer. see sample for structure of the Bill
+     * @returns {object} see sample for structure of the returned ApiResponse Object 
+     * Check if(ApiResponse.error == null) to see if there are errors.
+     * ApiResponse.res will have the value of the returned PaymentCode on success.
+     */
+    async createBill(bill) {
+        return await this._send('post', 'einvoice/api/bill', {}, this._prepareBill(bill));
+    }   
+      
+    /**  
+     * Update an existing bill at WeBirr Servers, if the bill is not paid yet.
+     * The billReference has to be the same as the original bill created.
+     * @param {object} bill represents an invoice or bill for a customer. see sample for structure of the Bill
+     * @returns {object} see sample for structure of the returned ApiResponse Object 
+     * Check if(ApiResponse.error == null) to see if there are errors.
+     * ApiResponse.res will have the value of "OK" on success.
+     */
+    async updateBill(bill) {
+        return await this._send('put', 'einvoice/api/bill', {}, this._prepareBill(bill));
+    } 
+
+    /** 
+     * Delete an existing bill at WeBirr Servers, if the bill is not paid yet.
+     * @param {string} paymentCode is the number that WeBirr Payment Gateway returns on createBill.
+     * @returns {object} see sample for structure of the returned ApiResponse Object 
+     * Check if(ApiResponse.error == null) to see if there are errors.
+     * ApiResponse.res will have the value of "OK" on success.
+     */
+    async deleteBill(paymentCode) {
+        return await this._send('delete', 'einvoice/api/bill', { wbc_code: paymentCode }, {});
+    }  
+      
+    /**
+     * Get Payment Status of a Bill from WeBirr Servers
+     * @param {string} paymentCode is the number that WeBirr Payment Gateway returns on createBill.
+     * @returns {object} see sample for structure of the returned ApiResponse Object  
+     * Check if(returnedResult.error == null) to see if there are errors.
+     * returnedResult.res will have `Payment` object on success (will be null otherwise!)
+     * returnedResult.res?.isPaid ?? false -> will return true if the bill is paid (payment completed)
+     * returnedResult.res?.data ?? null -> will have `PaymentDetail` object
+     */
+    async getPaymentStatus(paymentCode) { 
+        return await this._send('get', 'einvoice/api/paymentStatus', { wbc_code: paymentCode });
+    }
+
+    /**
+     * Get one bill by the merchant bill reference.
+     * @param {string} billReference The merchant's unique bill reference.
+     * @returns {object} ApiResponse.res will contain the bill details on success.
+     */
+    async getBillByReference(billReference) {
+        return await this._send('get', 'einvoice/api/bill', { bill_reference: billReference });
+    }
+
+    /**
+     * Get one bill by WeBirr payment code / WBC code.
+     * @param {string} paymentCode The payment code returned by createBill.
+     * @returns {object} ApiResponse.res will contain the bill details on success.
+     */
+    async getBillByPaymentCode(paymentCode) {
+        return await this._send('get', 'einvoice/api/bill', { wbc_code: paymentCode });
+    }
+
+    /**
+     * Get list of bills updated after the last processed timestamp.
+     * @param {number} paymentStatus -1 for all, 0 pending, 1 unconfirmed payment, 2 paid.
+     * @param {string} lastTimeStamp Timestamp cursor. Prefer a saved or recent cursor such as "20251231"; include time when needed, for example "20251231235959". Empty string means from the beginning.
+     * @param {number} limit The number of bills returned per request.
+     * @returns {object} ApiResponse.res will contain an array of bills on success.
+     */
+    async getBills(paymentStatus = -1, lastTimeStamp = '', limit = 100) {
+        return await this._send('get', 'einvoice/api/bills', {
+            payment_status: paymentStatus,
+            last_timestamp: lastTimeStamp,
+            limit
+        });
+    }
+
+    /**
+     * Get list of Payments from WeBirr Servers received after the last processed timestamp ( for bulk polling )
+     * @param {string} lastTimeStamp The updateTimeStamp field value of the last payment record in the array retrieved before.
+     * @param {number} limit The number of records returned per request based on the caller's processing capacity.
+     * @returns {object} ApiResponse.res will contain an array of payment records on success.
+     */
+    async getPayments(lastTimeStamp = '', limit = 100) {
+        return await this._send('get', 'einvoice/api/payments', {
+            last_timestamp: lastTimeStamp,
+            limit
+        });
+    }
+
+    /**
+     * Retrieves basic statistics about bills created and payments received over a date range.
+     * @param {string} dateFrom The start date of range (format: YYYY-MM-DD).
+     * @param {string} dateTo The end date of range (format: YYYY-MM-DD).
+     * @returns {object} The response object containing statistics or an error message.
+     */
+    async getStat(dateFrom, dateTo) {
+        return await this._send('get', 'merchant/stat', {
+            date_from: dateFrom,
+            date_to: dateTo
+        });
+    }
 
 }
 
