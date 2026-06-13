@@ -499,9 +499,16 @@ npm run test:testenv
 For batch or mass bill workloads, you can pass a configured axios client so your application controls timeout, interceptors, and connection reuse:
 
 ```javascript
+const http = require('http');
+const https = require('https');
 const axios = require('axios');
 const webirr = require('webirr');
 
-const httpClient = axios.create({ timeout: 30000 });
+const httpClient = axios.create({
+  timeout: 30000,
+  httpAgent: new http.Agent({ keepAlive: true }),
+  httpsAgent: new https.Agent({ keepAlive: true })
+});
+
 const api = new webirr.WeBirrClient(merchantId, apiKey, true, httpClient);
 ```

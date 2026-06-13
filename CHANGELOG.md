@@ -25,3 +25,11 @@
 ## 1.0.3
 
 - Unit tests added
+
+## 1.0.4
+
+- more api endpoints
+
+## 1.1.0
+
+- json headers and axios reuse example
