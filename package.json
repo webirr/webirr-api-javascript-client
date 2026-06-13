@@ -1,10 +1,18 @@
 {
   "name": "webirr",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Official JavaScript Client Library for WeBirr Payment Gateway APIs",
   "main": "webirr.js",
+  "files": [
+    "webirr.js",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "examples"
+  ],
   "scripts": {
-    "test": "jest --verbose --coverage",
+    "test": "jest --verbose --coverage --testPathIgnorePatterns webirr.testenv.test.js",
+    "test:testenv": "jest --verbose --runTestsByPath __test__/webirr.testenv.test.js --runInBand",
     "test:watch": "jest --verbose --watch"
   },
   "repository": {
@@ -23,9 +31,9 @@
   },
   "homepage": "https://github.com/webirr/webirr-api-javascript-client#readme",
   "dependencies": {
-    "axios": "^0.21.1"
+    "axios": "^1.17.0"
   },
   "devDependencies": {
-    "jest": "^27.0.6"
+    "jest": "^30.4.2"
   }
 }
