@@ -138,6 +138,19 @@ test('TestEnv getPayments returns payment array', async () => {
     expect(Array.isArray(response.res)).toBe(true);
 });
 
+test('TestEnv getSupportedBanks returns merchant-scoped bank array', async () => {
+    const response = await api.getSupportedBanks();
+    assertNoApiError(response, 'getSupportedBanks');
+
+    expect(Array.isArray(response.res)).toBe(true);
+    expect(response.res.length).toBeGreaterThan(0);
+
+    for (const bank of response.res) {
+        expect((bank.bankID || '').toString()).not.toBe('');
+        expect((bank.name || '').toString()).not.toBe('');
+    }
+});
+
 test('TestEnv getStat returns stat object', async () => {
     const response = await api.getStat('2025-01-01', '2030-01-31');
     assertNoApiError(response, 'getStat');
