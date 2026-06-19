@@ -205,6 +205,14 @@ class WeBirrClient {
     }
 
     /**
+     * Get banks and wallets configured for this merchant.
+     * @returns {object} ApiResponse.res will contain an array of { bankID, name } items on success.
+     */
+    async getSupportedBanks() {
+        return await this._send('get', 'einvoice/api/banks');
+    }
+
+    /**
      * Retrieves basic statistics about bills created and payments received over a date range.
      * @param {string} dateFrom The start date of range (format: YYYY-MM-DD).
      * @param {string} dateTo The end date of range (format: YYYY-MM-DD).

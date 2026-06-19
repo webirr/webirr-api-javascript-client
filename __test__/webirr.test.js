@@ -38,6 +38,7 @@ function endpointCalls(api) {
         getBillByPaymentCode: () => api.getBillByPaymentCode('123 456 789'),
         getBills: () => api.getBills(-1, exampleCursor, 10),
         getPayments: () => api.getPayments(exampleCursor, 10),
+        getSupportedBanks: () => api.getSupportedBanks(),
         getStat: () => api.getStat('2025-01-01', '2025-01-02')
     };
 }
@@ -51,6 +52,7 @@ const endpoints = [
     ['getBillByPaymentCode', 'get', 'einvoice/api/bill', { wbc_code: '123 456 789' }],
     ['getBills', 'get', 'einvoice/api/bills', { payment_status: '-1', last_timestamp: exampleCursor, limit: '10' }],
     ['getPayments', 'get', 'einvoice/api/payments', { last_timestamp: exampleCursor, limit: '10' }],
+    ['getSupportedBanks', 'get', 'einvoice/api/banks', {}],
     ['getStat', 'get', 'merchant/stat', { date_from: '2025-01-01', date_to: '2025-01-02' }]
 ];
 
@@ -211,6 +213,33 @@ test('getPayments should get error from WebService on invalid api key', async ()
     var res = await api.getPayments(exampleCursor, 10);
 
     expect(res.error.length > 0).toBe(true);
+});
+
+test('getSupportedBanks should get error from WebService on invalid api key', async () => {
+    var api = new webirr.WeBirrClient('invalid-merchant', 'x', true);
+    var res = await api.getSupportedBanks();
+
+    expect(res.error.length > 0).toBe(true);
+});
+
+test('getSupportedBanks maps supported bank response fields', async () => {
+    const httpClient = mockHttpClient({
+        status: 200,
+        data: {
+            error: null,
+            res: [
+                { bankID: 'cbe_mobile', name: 'CBE Mobile Banking' }
+            ],
+            errorCode: null
+        }
+    });
+    const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', true, httpClient);
+
+    const res = await api.getSupportedBanks();
+
+    expect(res.error).toBeNull();
+    expect(res.res[0].bankID).toBe('cbe_mobile');
+    expect(res.res[0].name).toBe('CBE Mobile Banking');
 });
 
 test('getStat should get error from WebService on invalid api key', async () => {

@@ -55,6 +55,42 @@ The old constructor still works for existing applications:
 var api = new webirr.WeBirrClient(apiKey, true);
 ```
 
+## TypeScript
+
+The package includes TypeScript declarations. You can import the client and
+public model types from the existing `webirr` package:
+
+```typescript
+import { ApiResponse, Bill, PaymentStatus, SupportedBank, WeBirrClient } from 'webirr';
+
+const api = new WeBirrClient(merchantId, apiKey, true);
+
+const bill: Bill = {
+  amount: '270.90',
+  customerCode: 'cc01',
+  customerName: 'Test Customer',
+  customerPhone: '0911000000',
+  time: '2026-06-18 10:00',
+  description: 'TypeScript example bill',
+  billReference: `typescript/example/${Date.now()}`,
+  extras: {}
+};
+
+const created: ApiResponse<string> = await api.createBill(bill);
+const paymentCode = created.res;
+
+if (paymentCode) {
+  const status: ApiResponse<PaymentStatus> =
+    await api.getPaymentStatus(paymentCode);
+  console.log(status.res?.status);
+}
+
+const banks: ApiResponse<SupportedBank[]> = await api.getSupportedBanks();
+for (const bank of banks.res || []) {
+  console.log(`${bank.bankID} - ${bank.name}`);
+}
+```
+
 ## Example
 
 ### Creating a new Bill / Updating an existing Bill on WeBirr Servers
@@ -426,6 +462,43 @@ http.createServer((req, res) => {
 
 ```
 
+### Getting Supported Banks
+
+```javascript
+
+const webirr = require('webirr');
+
+async function main()
+{
+  const apiKey = process.env.WEBIRR_TEST_ENV_API_KEY || 'YOUR_API_KEY';
+  const merchantId = process.env.WEBIRR_TEST_ENV_MERCHANT_ID || 'YOUR_MERCHANT_ID';
+
+  var api = new webirr.WeBirrClient(merchantId, apiKey, true);
+
+  console.log('Getting supported banks...');
+  var response = await api.getSupportedBanks();
+
+  if (!response.error) {
+    // success
+    for (const bank of response.res || []) {
+      console.log(`${bank.bankID} - ${bank.name}`);
+    }
+  } else {
+    // fail
+    console.log(`error: ${response.error}`);
+    console.log(`errorCode: ${response.errorCode}`);
+  }
+}
+
+main();
+
+```
+
+Checkout applications should use this merchant-specific list when showing
+payment instructions, for example `{Bank Name} -> WeBirr -> Payment Code`.
+Do not show a broad global bank list in checkout UI; show only banks returned
+for the configured merchant.
+
 ### Gettting basic Statistics about bills created and payments received for a date range
 
 ```javascript
@@ -476,6 +549,13 @@ node examples/example4-payment-status-bulk-poll.js
 node examples/example5-stat-report.js
 node examples/example6-payment-status-webhook.js
 node examples/example7-get-bill-and-list-bills.js
+node examples/example9-supported-banks.js
+```
+
+The TypeScript example can be checked with the package typecheck command:
+
+```bash
+npm run test:types
 ```
 
 ## Tests
