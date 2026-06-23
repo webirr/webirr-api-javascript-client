@@ -28,6 +28,25 @@ function mockHttpClient(response = { status: 200, data: { error: null, res: 'OK'
     };
 }
 
+async function withGatewayUrl(value, callback) {
+    const previous = process.env.GATEWAY_URL;
+    if (value === undefined) {
+        delete process.env.GATEWAY_URL;
+    } else {
+        process.env.GATEWAY_URL = value;
+    }
+
+    try {
+        await callback();
+    } finally {
+        if (previous === undefined) {
+            delete process.env.GATEWAY_URL;
+        } else {
+            process.env.GATEWAY_URL = previous;
+        }
+    }
+}
+
 function endpointCalls(api) {
     return {
         createBill: () => api.createBill(sampleBill()),
@@ -86,6 +105,39 @@ test('constructor can use injected axios client for requests', async () => {
     expect(response.res).toBe('OK');
     expect(httpClient.request).toHaveBeenCalledTimes(1);
     expect(httpClient.requests[0].url).toContain('merchant_id=merchant-from-client');
+});
+
+test('TestEnv defaults to dev gateway', async () => {
+    await withGatewayUrl(undefined, async () => {
+        const httpClient = mockHttpClient();
+        const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', true, httpClient);
+
+        await api.deleteBill('123 456 789');
+
+        expect(httpClient.requests[0].url).toMatch(/^https:\/\/api\.webirr\.dev\/einvoice\/api\/bill\?/);
+    });
+});
+
+test('TestEnv can use internal gateway URL override', async () => {
+    await withGatewayUrl('https://local-gateway.example/', async () => {
+        const httpClient = mockHttpClient();
+        const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', true, httpClient);
+
+        await api.deleteBill('123 456 789');
+
+        expect(httpClient.requests[0].url).toMatch(/^https:\/\/local-gateway\.example\/einvoice\/api\/bill\?/);
+    });
+});
+
+test('ProdEnv ignores internal gateway URL override', async () => {
+    await withGatewayUrl('https://local-gateway.example/', async () => {
+        const httpClient = mockHttpClient();
+        const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', false, httpClient);
+
+        await api.deleteBill('123 456 789');
+
+        expect(httpClient.requests[0].url).toMatch(/^https:\/\/api\.webirr\.net:8080\/einvoice\/api\/bill\?/);
+    });
 });
 
 test.each(endpoints)('%s includes merchant_id when configured', async (endpoint, method, path, expectedQuery) => {

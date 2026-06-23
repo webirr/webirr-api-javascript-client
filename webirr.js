@@ -1,6 +1,21 @@
 const axiosModule = require('axios');
 const axios = axiosModule.default || axiosModule;
 
+const TEST_BASE_ADDRESS = 'https://api.webirr.dev';
+const PROD_BASE_ADDRESS = 'https://api.webirr.net:8080';
+
+function resolveBaseAddress(isTestEnv) {
+    if (!isTestEnv) {
+        return PROD_BASE_ADDRESS;
+    }
+
+    const gatewayUrl = typeof process !== 'undefined' && process.env
+        ? (process.env.GATEWAY_URL || '').trim()
+        : '';
+
+    return gatewayUrl ? gatewayUrl.replace(/\/+$/, '') : TEST_BASE_ADDRESS;
+}
+
 /** 
  * A WeBirrClient instance object can be used to
  * Create, Update or Delete a Bill at WeBirr Servers, retrieve
@@ -22,12 +37,12 @@ class WeBirrClient {
         if (typeof apiKeyOrIsTestEnv === 'boolean' || apiKeyOrIsTestEnv === undefined) {
             this._merchantId = '';
             this._apiKey = merchantIdOrApiKey || '';
-            this._baseAddress = (apiKeyOrIsTestEnv === undefined || apiKeyOrIsTestEnv) ? 'https://api.webirr.net' : 'https://api.webirr.net:8080';
+            this._baseAddress = resolveBaseAddress(apiKeyOrIsTestEnv === undefined || apiKeyOrIsTestEnv);
             this._client = this._isHttpClient(isTestEnv) ? isTestEnv : (httpClient || axios.create());
         } else {
             this._merchantId = merchantIdOrApiKey || '';
             this._apiKey = apiKeyOrIsTestEnv || '';
-            this._baseAddress = isTestEnv ? 'https://api.webirr.net' : 'https://api.webirr.net:8080';
+            this._baseAddress = resolveBaseAddress(isTestEnv);
             this._client = httpClient || axios.create();
         }
     }
