@@ -85,15 +85,22 @@ test('preferred constructor sets bill merchant id before sending', async () => {
     expect(httpClient.requests[0].data.merchantID).toBe('merchant-from-client');
 });
 
-test('legacy constructor does not overwrite existing bill merchant id with empty client merchant id', async () => {
+test('explicit empty merchant id does not overwrite existing bill merchant id', async () => {
     const httpClient = mockHttpClient();
-    const api = new webirr.WeBirrClient('api-key', true, httpClient);
+    const api = new webirr.WeBirrClient('', 'api-key', true, httpClient);
     const bill = sampleBill();
     bill.merchantID = 'merchant-on-bill';
 
     await api.createBill(bill);
 
     expect(httpClient.requests[0].data.merchantID).toBe('merchant-on-bill');
+});
+
+test('legacy constructor shape is rejected', () => {
+    const httpClient = mockHttpClient();
+
+    expect(() => new webirr.WeBirrClient('api-key', true, httpClient))
+        .toThrow('merchantId is required');
 });
 
 test('constructor can use injected axios client for requests', async () => {
@@ -162,7 +169,7 @@ test.each(endpoints)('%s includes merchant_id when configured', async (endpoint,
 
 test.each(endpoints)('%s omits merchant_id when client merchant id is empty', async (endpoint) => {
     const httpClient = mockHttpClient();
-    const api = new webirr.WeBirrClient('api-key', true, httpClient);
+    const api = new webirr.WeBirrClient('', 'api-key', true, httpClient);
 
     await endpointCalls(api)[endpoint]();
 

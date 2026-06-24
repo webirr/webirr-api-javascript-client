@@ -25,30 +25,21 @@ function resolveBaseAddress(isTestEnv) {
 class WeBirrClient {
     /**
      * Creates an instance of WeBirrClient object to interact with remote WebService API.
-     * Preferred: new WeBirrClient(merchantId, apiKey, isTestEnv, httpClient)
-     * Legacy: new WeBirrClient(apiKey, isTestEnv)
-     * @param {string} merchantIdOrApiKey
-     * @param {string|boolean} apiKeyOrIsTestEnv
-     * @param {boolean|object} isTestEnv
+     * @param {string} merchantId
+     * @param {string} apiKey
+     * @param {boolean} isTestEnv
      * @param {object|null} httpClient Optional configured axios client for connection reuse/custom handlers.
      */
-    constructor(merchantIdOrApiKey, apiKeyOrIsTestEnv = true, isTestEnv = true, httpClient = null)
+    constructor(merchantId, apiKey, isTestEnv = true, httpClient = null)
     {
-        if (typeof apiKeyOrIsTestEnv === 'boolean' || apiKeyOrIsTestEnv === undefined) {
-            this._merchantId = '';
-            this._apiKey = merchantIdOrApiKey || '';
-            this._baseAddress = resolveBaseAddress(apiKeyOrIsTestEnv === undefined || apiKeyOrIsTestEnv);
-            this._client = this._isHttpClient(isTestEnv) ? isTestEnv : (httpClient || axios.create());
-        } else {
-            this._merchantId = merchantIdOrApiKey || '';
-            this._apiKey = apiKeyOrIsTestEnv || '';
-            this._baseAddress = resolveBaseAddress(isTestEnv);
-            this._client = httpClient || axios.create();
+        if (typeof apiKey !== 'string') {
+            throw new TypeError('merchantId is required. Use new WeBirrClient(merchantId, apiKey, isTestEnv, httpClient).');
         }
-    }
 
-    _isHttpClient(value) {
-        return value && typeof value.request === 'function';
+        this._merchantId = merchantId || '';
+        this._apiKey = apiKey || '';
+        this._baseAddress = resolveBaseAddress(isTestEnv);
+        this._client = httpClient || axios.create();
     }
 
     _query(params = {}) {

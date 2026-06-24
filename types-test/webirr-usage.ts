@@ -1,4 +1,3 @@
-import webirr = require("webirr");
 import {
   ApiResponse,
   Bill,
@@ -22,7 +21,6 @@ const httpClient: HttpClient = {
 };
 
 const preferredClient = new WeBirrClient("merchant-id", "api-key", true, httpClient);
-const legacyClient = new webirr.WeBirrClient("api-key", true, httpClient);
 
 const bill: Bill = {
   amount: "270.90",
@@ -42,7 +40,7 @@ async function runTypeUsage(): Promise<void> {
   const paymentCode: string = created.res || "000000000";
 
   const updated: ApiResponse<string> = await preferredClient.updateBill(bill);
-  const deleted: ApiResponse<string> = await legacyClient.deleteBill(paymentCode);
+  const deleted: ApiResponse<string> = await preferredClient.deleteBill(paymentCode);
   const status: ApiResponse<PaymentStatus> = await preferredClient.getPaymentStatus(paymentCode);
   const byReference: ApiResponse<BillResponse> = await preferredClient.getBillByReference(bill.billReference);
   const byCode: ApiResponse<BillResponse> = await preferredClient.getBillByPaymentCode(paymentCode);
