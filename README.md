@@ -49,11 +49,7 @@ const apiKey = process.env.WEBIRR_TEST_ENV_API_KEY || 'YOUR_API_KEY';
 var api = new webirr.WeBirrClient(merchantId, apiKey, true);
 ```
 
-The old constructor still works for existing applications:
-
-```javascript
-var api = new webirr.WeBirrClient(apiKey, true);
-```
+In 2.x, the client constructor requires the merchant ID argument.
 
 ## TypeScript
 

@@ -95,7 +95,6 @@ export interface HttpClient {
 }
 
 export class WeBirrClient {
-  constructor(apiKey: string, isTestEnv?: boolean, httpClient?: HttpClient | null);
   constructor(merchantId: string, apiKey: string, isTestEnv?: boolean, httpClient?: HttpClient | null);
 
   createBill(bill: Bill): Promise<ApiResponse<string>>;
