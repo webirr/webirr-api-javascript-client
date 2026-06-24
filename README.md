@@ -49,7 +49,7 @@ const apiKey = process.env.WEBIRR_TEST_ENV_API_KEY || 'YOUR_API_KEY';
 var api = new webirr.WeBirrClient(merchantId, apiKey, true);
 ```
 
-In 2.x, the client constructor requires the merchant ID argument.
+In 2.x, the client constructor requires the merchant ID argument. The client sends `merchant_id` on every request and sets `bill.merchantID` from the client value before create/update calls.
 
 ## TypeScript
 

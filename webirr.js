@@ -32,12 +32,8 @@ class WeBirrClient {
      */
     constructor(merchantId, apiKey, isTestEnv = true, httpClient = null)
     {
-        if (typeof apiKey !== 'string') {
-            throw new TypeError('merchantId is required. Use new WeBirrClient(merchantId, apiKey, isTestEnv, httpClient).');
-        }
-
-        this._merchantId = merchantId || '';
-        this._apiKey = apiKey || '';
+        this._merchantId = merchantId == null ? '' : merchantId.toString();
+        this._apiKey = apiKey == null ? '' : apiKey.toString();
         this._baseAddress = resolveBaseAddress(isTestEnv);
         this._client = httpClient || axios.create();
     }
@@ -45,10 +41,7 @@ class WeBirrClient {
     _query(params = {}) {
         const query = new URLSearchParams();
         query.append('api_key', this._apiKey);
-
-        if (this._merchantId) {
-            query.append('merchant_id', this._merchantId);
-        }
+        query.append('merchant_id', this._merchantId);
 
         Object.keys(params || {}).forEach((key) => {
             const value = params[key] == null ? '' : params[key];
@@ -67,9 +60,7 @@ class WeBirrClient {
             return bill;
         }
 
-        if (this._merchantId) {
-            bill.merchantID = this._merchantId;
-        }
+        bill.merchantID = this._merchantId;
 
         if (bill.customerPhone === undefined || bill.customerPhone === null) {
             bill.customerPhone = '';
