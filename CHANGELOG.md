@@ -33,3 +33,7 @@
 ## 1.1.0
 
 - json headers and axios reuse example
+
+## 2.1.0
+
+- platform errors are native errors; WeBirr API errors remain ApiResponse

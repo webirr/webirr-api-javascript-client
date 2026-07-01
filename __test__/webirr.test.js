@@ -107,6 +107,62 @@ test('constructor can use injected axios client for requests', async () => {
     expect(httpClient.requests[0].url).toContain('merchant_id=merchant-from-client');
 });
 
+test('2xx business error envelope resolves as ApiResponse', async () => {
+    const httpClient = mockHttpClient({
+        status: 200,
+        data: {
+            error: 'invalid api key',
+            errorCode: 'ERROR_INVALID_API_KEY',
+            res: null
+        }
+    });
+    const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', true, httpClient);
+
+    const response = await api.createBill(sampleBill());
+
+    expect(response.error).toBe('invalid api key');
+    expect(response.errorCode).toBe('ERROR_INVALID_API_KEY');
+});
+
+test('axios/network rejection is not converted into ApiResponse', async () => {
+    const networkError = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+    const httpClient = {
+        request: jest.fn(async () => {
+            throw networkError;
+        })
+    };
+    const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', true, httpClient);
+
+    await expect(api.deleteBill('123 456 789')).rejects.toBe(networkError);
+});
+
+test('non-2xx response from injected client rejects with response status', async () => {
+    const httpClient = mockHttpClient({
+        status: 503,
+        statusText: 'Service Unavailable',
+        data: 'gateway unavailable'
+    });
+    const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', true, httpClient);
+
+    await expect(api.getSupportedBanks()).rejects.toMatchObject({
+        message: 'http error 503 Service Unavailable',
+        response: { status: 503 }
+    });
+});
+
+test.each([
+    ['empty body', ''],
+    ['null body', null],
+    ['non-object body', 'not json'],
+    ['array body', []],
+    ['empty object body', {}]
+])('invalid 2xx ApiResponse body rejects: %s', async (caseName, data) => {
+    const httpClient = mockHttpClient({ status: 200, data });
+    const api = new webirr.WeBirrClient('merchant-from-client', 'api-key', true, httpClient);
+
+    await expect(api.getStat('2025-01-01', '2025-01-02')).rejects.toThrow('invalid ApiResponse body');
+});
+
 test('TestEnv defaults to dev gateway', async () => {
     await withGatewayUrl(undefined, async () => {
         const httpClient = mockHttpClient();

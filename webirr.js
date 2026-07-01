@@ -16,6 +16,21 @@ function resolveBaseAddress(isTestEnv) {
     return gatewayUrl ? gatewayUrl.replace(/\/+$/, '') : TEST_BASE_ADDRESS;
 }
 
+function isApiResponseBody(value) {
+    return value
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && ('error' in value || 'errorCode' in value || 'res' in value);
+}
+
+function httpError(response) {
+    const status = response && response.status;
+    const statusText = response && response.statusText ? ` ${response.statusText}` : '';
+    const error = new Error(`http error ${status}${statusText}`.trim());
+    error.response = response;
+    return error;
+}
+
 /** 
  * A WeBirrClient instance object can be used to
  * Create, Update or Delete a Bill at WeBirr Servers, retrieve
@@ -87,25 +102,17 @@ class WeBirrClient {
             request.data = data;
         }
 
-        try {
-            const resp = await this._client.request(request);
+        const resp = await this._client.request(request);
 
-            if (resp.status == 200) {
-                return resp.data;
-            }
-
-            return { error: `http error ${resp.status} ${resp.statusText || ''}`.trim() };
-        } catch (error) {
-            if (error.response) {
-                if (error.response.data && typeof error.response.data === 'object') {
-                    return error.response.data;
-                }
-
-                return { error: `http error ${error.response.status} ${error.response.statusText || ''}`.trim() };
-            }
-
-            return { error: error.message || String(error) };
+        if (resp.status < 200 || resp.status >= 300) {
+            throw httpError(resp);
         }
+
+        if (!isApiResponseBody(resp.data)) {
+            throw new Error('invalid ApiResponse body');
+        }
+
+        return resp.data;
     }
 
     /** 
