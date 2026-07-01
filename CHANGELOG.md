@@ -1,3 +1,7 @@
+## 2.1.2
+
+- transient errors helper
+
 ## 2.1.1
 
 - transient errors helper
