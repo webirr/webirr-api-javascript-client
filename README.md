@@ -554,30 +554,6 @@ The TypeScript example can be checked with the package typecheck command:
 npm run test:types
 ```
 
-## Error handling & retries
-
-WeBirr business errors come back on HTTP 2xx responses in `ApiResponse.error` and `ApiResponse.errorCode`. Platform failures such as network/DNS/TLS errors, timeouts, non-2xx HTTP responses, and empty or non-JSON 2xx bodies reject the promise instead of returning `ApiResponse`.
-
-Retry only transient platform failures with exponential backoff and jitter: connection errors, timeout rejections such as `err.code === 'ECONNABORTED'` or `err.code === 'ETIMEDOUT'`, and HTTP `5xx`, `429`, or `408` from `err.response.status`. Do not retry other `4xx` responses. Create and read operations are safe to retry. `DeleteBill` is also safe to retry, but a retry after it already succeeded returns an "invalid payment code" error; treat that as already-deleted.
-
-```javascript
-try {
-    const response = await api.createBill(bill);
-
-    if (response.error) {
-        // WeBirr business error from a 2xx ApiResponse envelope.
-        console.log(`WeBirr error ${response.errorCode}: ${response.error}`);
-        return;
-    }
-
-    console.log(`Payment Code = ${response.res}`);
-} catch (error) {
-    // Platform error. Retry only transient failures such as connection errors,
-    // timeouts, 5xx, 429, or 408.
-    throw error;
-}
-```
-
 ## Tests
 
 Fast tests cover endpoint shape, merchant ID handling, request defaults, and invalid API-key behavior:
@@ -611,4 +587,35 @@ const httpClient = axios.create({
 });
 
 const api = new webirr.WeBirrClient(merchantId, apiKey, true, httpClient);
+```
+
+## Error handling & retries
+
+WeBirr business errors come back on HTTP 2xx responses in `ApiResponse.error` and `ApiResponse.errorCode`. Platform failures such as network/DNS/TLS errors, timeouts, non-2xx HTTP responses, and empty or non-JSON 2xx bodies reject the promise instead of returning `ApiResponse`.
+
+Retry only transient platform failures with exponential backoff and jitter: connection errors, timeout rejections such as `err.code === 'ECONNABORTED'` or `err.code === 'ETIMEDOUT'`, and HTTP `5xx`, `429`, or `408` from `err.response.status`. Use `TransientErrors.isTransient(error)` to apply that rule. Do not retry other `4xx` responses. Create and read operations are safe to retry. `DeleteBill` is also safe to retry, but a retry after it already succeeded returns an "invalid payment code" error; treat that as already-deleted.
+
+```javascript
+const { TransientErrors } = require('webirr');
+
+try {
+    const response = await api.createBill(bill);
+
+    if (response.error) {
+        // WeBirr business error from a 2xx ApiResponse envelope.
+        console.log(`WeBirr error ${response.errorCode}: ${response.error}`);
+        return;
+    }
+
+    console.log(`Payment Code = ${response.res}`);
+} catch (error) {
+    if (TransientErrors.isTransient(error)) {
+        // Transient platform error: connection/timeout failure,
+        // HTTP 5xx, 429, or 408.
+        // Safe to retry with backoff + jitter.
+    } else {
+        // Non-transient platform error: HTTP 4xx other than 408/429.
+        // Do not retry automatically.
+    }
+}
 ```

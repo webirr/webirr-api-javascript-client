@@ -31,6 +31,27 @@ function httpError(response) {
     return error;
 }
 
+class TransientErrors {
+    static isTransient(error) {
+        if (!error) {
+            return false;
+        }
+
+        const status = error.response && error.response.status;
+        if (status) {
+            return status === 408 || status === 429 || status >= 500;
+        }
+
+        return error.isAxiosError === true ||
+            error.code === 'ECONNABORTED' ||
+            error.code === 'ETIMEDOUT' ||
+            error.code === 'ECONNRESET' ||
+            error.code === 'ECONNREFUSED' ||
+            error.code === 'ENOTFOUND' ||
+            error.code === 'EAI_AGAIN';
+    }
+}
+
 /** 
  * A WeBirrClient instance object can be used to
  * Create, Update or Delete a Bill at WeBirr Servers, retrieve
@@ -232,3 +253,4 @@ class WeBirrClient {
 }
 
 module.exports.WeBirrClient =  WeBirrClient;
+module.exports.TransientErrors = TransientErrors;

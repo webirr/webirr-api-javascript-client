@@ -150,6 +150,18 @@ test('non-2xx response from injected client rejects with response status', async
     });
 });
 
+test('TransientErrors classifies retryable platform failures', () => {
+    expect(webirr.TransientErrors.isTransient({ response: { status: 503 } })).toBe(true);
+    expect(webirr.TransientErrors.isTransient({ response: { status: 429 } })).toBe(true);
+    expect(webirr.TransientErrors.isTransient({ response: { status: 408 } })).toBe(true);
+    expect(webirr.TransientErrors.isTransient({ response: { status: 400 } })).toBe(false);
+    expect(webirr.TransientErrors.isTransient({ code: 'ECONNABORTED' })).toBe(true);
+    expect(webirr.TransientErrors.isTransient({ code: 'ETIMEDOUT' })).toBe(true);
+    expect(webirr.TransientErrors.isTransient({ code: 'ECONNREFUSED' })).toBe(true);
+    expect(webirr.TransientErrors.isTransient(new Error('bad json'))).toBe(false);
+    expect(webirr.TransientErrors.isTransient(null)).toBe(false);
+});
+
 test.each([
     ['empty body', ''],
     ['null body', null],

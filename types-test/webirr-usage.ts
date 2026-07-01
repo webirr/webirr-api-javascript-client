@@ -7,6 +7,7 @@ import {
   PaymentStatus,
   Stat,
   SupportedBank,
+  TransientErrors,
   WeBirrClient
 } from "webirr";
 
@@ -48,6 +49,7 @@ async function runTypeUsage(): Promise<void> {
   const payments: ApiResponse<PaymentResponse[]> = await preferredClient.getPayments("20251231", 10);
   const supportedBanks: ApiResponse<SupportedBank[]> = await preferredClient.getSupportedBanks();
   const stat: ApiResponse<Stat> = await preferredClient.getStat("2025-01-01", "2030-01-31");
+  const retryable: boolean = TransientErrors.isTransient(new Error("connection refused"));
 
   void updated;
   void deleted;
@@ -58,6 +60,7 @@ async function runTypeUsage(): Promise<void> {
   void payments;
   void supportedBanks;
   void stat;
+  void retryable;
 }
 
 void runTypeUsage();

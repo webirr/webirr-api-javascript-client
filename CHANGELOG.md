@@ -1,3 +1,7 @@
+## 2.1.1
+
+- transient errors helper
+
 ## 0.1.0
 
 - test publication

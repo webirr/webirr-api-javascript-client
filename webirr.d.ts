@@ -94,6 +94,10 @@ export interface HttpClient {
   request(request: HttpRequest): Promise<HttpResponse>;
 }
 
+export class TransientErrors {
+  static isTransient(error: unknown): boolean;
+}
+
 export class WeBirrClient {
   constructor(merchantId: string, apiKey: string, isTestEnv?: boolean, httpClient?: HttpClient | null);
 
